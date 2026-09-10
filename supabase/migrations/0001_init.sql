@@ -1,4 +1,4 @@
--- House Fund — initial schema
+-- J&S Fundos — initial schema
 -- Money is stored as integer cents everywhere. Never floats.
 
 create extension if not exists "pgcrypto";
@@ -10,7 +10,7 @@ create extension if not exists "pgcrypto";
 -- Exactly one row for v1: the shared pot.
 create table if not exists fund (
   id         uuid        primary key default gen_random_uuid(),
-  name       text        not null default 'House Fund',
+  name       text        not null default 'J&S Fundos',
   goal_cents bigint      not null default 500000 check (goal_cents > 0),
   currency   text        not null default 'BRL',
   locale     text        not null default 'pt-BR',
@@ -75,5 +75,5 @@ create policy "upsert own"    on profile for all to authenticated
 -- ---------------------------------------------------------------------------
 
 insert into fund (name, goal_cents, currency, locale)
-select 'House Fund', 500000, 'BRL', 'pt-BR'
+select 'J&S Fundos', 500000, 'BRL', 'pt-BR'
 where not exists (select 1 from fund);

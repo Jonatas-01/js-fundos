@@ -2,10 +2,11 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Refreshes the Supabase auth cookie on every request. Without this the
- * session silently expires and you get bounced to /login mid-use.
+ * Runs before every matched request (Next 16's replacement for middleware).
+ * Refreshes the Supabase auth cookie so the session doesn't silently expire
+ * and bounce you to /login mid-use.
  */
-export async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

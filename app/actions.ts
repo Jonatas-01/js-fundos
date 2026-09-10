@@ -31,18 +31,18 @@ export async function addDeposit(
   formData: FormData,
 ): Promise<ActionState> {
   const { supabase, fund } = await loadFund();
-  if (!fund) return { error: "No fund found. Run the migration first." };
+  if (!fund) return { error: "Nenhum fundo encontrado. Rode a migração primeiro." };
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You are not signed in." };
+  if (!user) return { error: "Você não está conectado." };
 
-  const cents = parseAmountToCents(String(formData.get("amount") ?? ""), fund.locale);
-  if (cents === null) return { error: "Enter an amount greater than zero." };
+  const cents = parseAmountToCents(String(formData.get("amount") ?? ""));
+  if (cents === null) return { error: "Informe um valor maior que zero." };
 
   const occurredOn = String(formData.get("occurred_on") ?? "");
-  if (!validDate(occurredOn)) return { error: "Pick a date that is not in the future." };
+  if (!validDate(occurredOn)) return { error: "Escolha uma data que não esteja no futuro." };
 
   const note = String(formData.get("note") ?? "").trim() || null;
 
@@ -64,7 +64,7 @@ export async function updateDeposit(
   formData: FormData,
 ): Promise<ActionState> {
   const { supabase, fund } = await loadFund();
-  if (!fund) return { error: "No fund found." };
+  if (!fund) return { error: "Nenhum fundo encontrado." };
 
   const {
     data: { user },
@@ -72,9 +72,9 @@ export async function updateDeposit(
   if (!user) return { error: "You are not signed in." };
 
   const id = String(formData.get("id") ?? "");
-  if (!id) return { error: "Missing deposit." };
+  if (!id) return { error: "Depósito não encontrado." };
 
-  const cents = parseAmountToCents(String(formData.get("amount") ?? ""), fund.locale);
+  const cents = parseAmountToCents(String(formData.get("amount") ?? ""));
   if (cents === null) return { error: "Enter an amount greater than zero." };
 
   const occurredOn = String(formData.get("occurred_on") ?? "");
@@ -125,11 +125,10 @@ export async function updateFund(
   const currency = String(formData.get("currency") ?? "BRL").toUpperCase();
   const locale = String(formData.get("locale") ?? "pt-BR");
 
-  // Parse the goal in the *new* locale, since both can change together.
-  const goal = parseAmountToCents(String(formData.get("goal") ?? ""), locale);
-  if (goal === null) return { error: "Enter a goal greater than zero." };
+  const goal = parseAmountToCents(String(formData.get("goal") ?? ""));
+  if (goal === null) return { error: "Informe uma meta maior que zero." };
 
-  if (!/^[A-Z]{3}$/.test(currency)) return { error: "Currency must be a 3-letter code." };
+  if (!/^[A-Z]{3}$/.test(currency)) return { error: "A moeda deve ter 3 letras." };
 
   const { error } = await supabase
     .from("fund")
@@ -152,7 +151,7 @@ export async function setDisplayName(
   if (!user) return { error: "You are not signed in." };
 
   const name = String(formData.get("display_name") ?? "").trim();
-  if (!name) return { error: "Enter a name." };
+  if (!name) return { error: "Informe um nome." };
 
   const { error } = await supabase
     .from("profile")

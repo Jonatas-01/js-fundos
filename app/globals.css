@@ -1,26 +1,178 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   J&S Fundos — neo-brutalist design tokens.
+
+   One light theme, no dark half: the look depends on saturated blocks over a
+   warm cream ground with hard black rules, and a dark inversion of that is a
+   different design rather than the same one dimmed.
+
+   The rules: every border is the same black at 3px, every shadow is a solid
+   offset with zero blur, every corner is square, and colour is used in flat
+   fills rather than tints. Hierarchy comes from size, weight and fill — never
+   from elevation or opacity.
+--------------------------------------------------------------------------- */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+
+  /* Warm cream page behind white and coloured blocks. */
+  --background: #fdf3e3;
+  --surface: #ffffff;
+  --surface-soft: #ffeec2;
+  --surface-hover: #ffe19a;
+
+  --foreground: #0d0d0d;
+  /* Dark enough to clear 4.5:1 on both the cream page and white blocks —
+     secondary text is still text, not decoration. */
+  --muted: #57503f;
+
+  /* One black does every border and every shadow. `line-soft` is the same
+     ink at a thinner weight, used for rules inside a block so a divider does
+     not read as heavily as the block's own outline. */
+  --line: #0d0d0d;
+  --line-soft: #0d0d0d;
+  --shadow: #0d0d0d;
+
+  /* Primary action: the signature yellow, always with black type on it.
+     The hover is a deeper cut of the same yellow — a paler one would read as
+     the button going disabled. */
+  --accent: #ffd93d;
+  --accent-hover: #ffc400;
+  --on-accent: #0d0d0d;
+
+  --success: #046b4a;
+  --success-soft: #9ff3cf;
+
+  --danger: #c2110d;
+  --danger-soft: #ffc2bd;
+
+  /* The goal marker: violet is the only hue in the app that is neither an
+     action nor a verdict, so the line and its label cannot be misread. */
+  --goal: #6524d1;
+  --goal-soft: #dfd0ff;
+
+  /* Chart fill for balance carried into a period — a flat second hue instead
+     of a faded copy of the ink, because neo-brutalism has no tints. */
+  --chart-carried: #4ecdc4;
+
+  --radius: 0px;
+  --border-width: 3px;
+  --shadow-hard: 6px 6px 0 0 var(--shadow);
+  --shadow-hard-sm: 4px 4px 0 0 var(--shadow);
 }
 
 @theme inline {
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-surface: var(--surface);
+  --color-surface-soft: var(--surface-soft);
+  --color-surface-hover: var(--surface-hover);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-on-accent: var(--on-accent);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --color-goal: var(--goal);
+  --color-goal-soft: var(--goal-soft);
+
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-grotesk);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+/* Headings and figures take the display face. Set here rather than per
+   component so a new heading cannot forget it. */
+:where(h1, h2, h3) {
+  font-family: var(--font-grotesk), var(--font-inter), system-ui, sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   Primitives. Every block in the app is one of these shapes, so they are
+   defined once here rather than as a repeated class string per component.
+--------------------------------------------------------------------------- */
+
+/* A content block: filled, hard black outline, hard offset shadow.
+   Named `card`, not `block` — a `block` utility would shadow Tailwind's
+   display utility of the same name and silently give any element using it a
+   border and shadow. */
+@utility card {
+  border: var(--border-width) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-hard);
+}
+
+/* Mechanical press: the element moves into its own shadow. Deliberately
+   instant — an eased travel makes a hard shadow look like it is sliding. */
+@utility pressable {
+  box-shadow: var(--shadow-hard-sm);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease,
+    box-shadow 60ms ease,
+    transform 60ms ease;
+
+  &:hover:not(:disabled) {
+    box-shadow: var(--shadow-hard);
+    transform: translate(-1px, -1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translate(4px, 4px);
+    box-shadow: none;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    box-shadow: none;
+    transform: translate(4px, 4px);
+  }
+}
+
+/* The small stencilled section label that titles every block. */
+@utility eyebrow {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--foreground);
+}
+
+/* A hard black focus ring, sized to be as loud as the borders around it. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--foreground);
+  outline-offset: 3px;
+}
+
+:where(button, [role="button"], summary):not(:disabled) {
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

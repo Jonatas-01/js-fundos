@@ -17,11 +17,12 @@ function decimalSeparator(locale: string): string {
  *
  * The rule: whichever of "." or "," appears last, if it is followed by one or
  * two digits, is the decimal separator. Everything else is a group separator.
- * That resolves the pt-BR / en-US ambiguity the same way a human would read it.
+ * That reads either locale's convention correctly without being told which one
+ * is in use, so this deliberately takes no locale argument.
  *
  * Returns null for anything that isn't a positive amount.
  */
-export function parseAmountToCents(input: string, locale: string): number | null {
+export function parseAmountToCents(input: string): number | null {
   const cleaned = input.replace(/[^\d.,]/g, "");
   if (!cleaned) return null;
 
