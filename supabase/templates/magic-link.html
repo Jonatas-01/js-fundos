@@ -1,0 +1,76 @@
+<!--
+  Supabase → Authentication → Emails → Magic Link
+  Paste the markup below into the "Message body" field.
+
+  Keep {{ .ConfirmationURL }} exactly as-is: it carries the PKCE code that
+  app/auth/callback/route.ts exchanges for a session. Hand-building the URL
+  from {{ .TokenHash }} would need a different callback route.
+
+  Email clients ignore <style> blocks and CSS classes, so every rule here is
+  inline and the layout is tables. The hard offset shadow degrades to a plain
+  thick border on Outlook, which still looks right.
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="background-color:#fdf3e3;margin:0;padding:32px 16px;font-family:Helvetica,Arial,sans-serif;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="max-width:480px;background-color:#ffffff;border:3px solid #0d0d0d;box-shadow:6px 6px 0 #0d0d0d;">
+        <tr>
+          <td style="padding:28px 28px 0 28px;">
+            <p style="margin:0;font-size:12px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;color:#57503f;">
+              J&amp;S Fundos
+            </p>
+            <h1 style="margin:12px 0 0 0;font-size:26px;line-height:1.2;font-weight:bold;text-transform:uppercase;color:#0d0d0d;">
+              Seu link de acesso
+            </h1>
+            <p style="margin:14px 0 0 0;font-size:15px;line-height:1.55;color:#0d0d0d;">
+              Clique no bot&atilde;o abaixo para entrar. N&atilde;o precisa de senha.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:24px 28px 0 28px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="background-color:#ffd93d;border:3px solid #0d0d0d;box-shadow:4px 4px 0 #0d0d0d;">
+                  <a href="{{ .ConfirmationURL }}"
+                     style="display:block;padding:14px 28px;font-size:15px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;color:#0d0d0d;text-decoration:none;">
+                    Entrar no app
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:24px 28px 0 28px;">
+            <p style="margin:0;font-size:13px;line-height:1.5;color:#57503f;">
+              Se o bot&atilde;o n&atilde;o funcionar, copie e cole este endere&ccedil;o no navegador:
+            </p>
+            <p style="margin:8px 0 0 0;font-size:12px;line-height:1.5;word-break:break-all;">
+              <a href="{{ .ConfirmationURL }}" style="color:#6524d1;">{{ .ConfirmationURL }}</a>
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:24px 28px 28px 28px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="border-top:3px solid #0d0d0d;padding-top:16px;">
+                  <p style="margin:0;font-size:12px;line-height:1.5;color:#57503f;">
+                    O link vale por uma hora e s&oacute; pode ser usado uma vez.
+                    Se voc&ecirc; n&atilde;o pediu este acesso, ignore este e-mail.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
