@@ -16,7 +16,11 @@ export default function LoginPage() {
     setError(null);
 
     const supabase = createClient();
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
+    // Trailing slashes here produce "//auth/callback", which Supabase's
+    // redirect allow-list rejects. Strip it rather than trust the env value.
+    const siteUrl = (
+      process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+    ).replace(/\/+$/, "");
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${siteUrl}/auth/callback` },

@@ -20,6 +20,37 @@ export type Deposit = {
 };
 
 export default async function Home() {
+  // NEXT_PUBLIC_* values are inlined at build time, so a host that built
+  // without them cannot be fixed by a restart. Say so plainly instead of
+  // throwing an opaque 500.
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    return (
+      <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-5 py-16">
+        <div className="card p-6">
+          <h1 className="text-2xl font-bold tracking-tight uppercase">
+            App não configurado
+          </h1>
+          <p className="mt-2 text-sm text-muted">
+            As variáveis{" "}
+            <code className="rounded-none border-2 border-line bg-surface-soft px-1.5 py-0.5 font-mono text-xs font-semibold">
+              NEXT_PUBLIC_SUPABASE_URL
+            </code>{" "}
+            e{" "}
+            <code className="rounded-none border-2 border-line bg-surface-soft px-1.5 py-0.5 font-mono text-xs font-semibold">
+              NEXT_PUBLIC_SUPABASE_ANON_KEY
+            </code>{" "}
+            não estavam presentes quando este build foi gerado. Adicione as duas
+            no seu provedor de hospedagem e gere um novo build (não basta
+            reiniciar).
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   const supabase = await createClient();
 
   const {
