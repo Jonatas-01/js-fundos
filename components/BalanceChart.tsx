@@ -16,10 +16,12 @@ import { formatCents, formatDate } from "@/lib/money";
 import type { Deposit, Fund } from "@/app/page";
 
 /**
- * One column per day, stacked into two parts: what the fund was already worth
- * when the day opened, and what was put in during it. Column height is the
- * running balance, so the chart reads as growth, while the solid cap shows the
- * day's own contribution without needing a second axis.
+ * One column per day, whose height is the running balance — so the chart reads
+ * as growth at a glance, with nothing to decode.
+ *
+ * The split behind that number (what was already saved versus what went in
+ * that day) is detail rather than headline, so it stays out of the way until a
+ * column is clicked.
  */
 type Column = {
   key: string;
@@ -44,7 +46,7 @@ function toISO(date: Date): string {
 }
 
 /** How many days of history the chart shows at once. */
-const WINDOW_DAYS = 40;
+const WINDOW_DAYS = 25;
 
 /**
  * One column per calendar day for the last {@link WINDOW_DAYS} days, ending
@@ -170,26 +172,53 @@ function Segment({ x = 0, y = 0, width = 0, height = 0, fill }: ShapeProps) {
   );
 }
 
+type BreakdownProps = {
+  active?: boolean;
+  payload?: { payload: Column }[];
+  fund: Fund;
+};
+
 /**
- * Two series, so identity never rests on colour alone: the key is always on
- * screen, and the tooltip names both parts again.
+ * Opened by clicking (or tapping) a column. Shows the two parts that make up
+ * the column's height, then the height itself, so the arithmetic is visible
+ * rather than implied by two stacked colours.
  */
-function LegendKey({
-  fill,
-  children,
-}: {
-  fill: string;
-  children: React.ReactNode;
-}) {
+function Breakdown({ active, payload, fund }: BreakdownProps) {
+  const column = payload?.[0]?.payload;
+  if (!active || !column) return null;
+
+  const rows: [string, number][] = [
+    ["Acumulado", column.carried],
+    ["Depositado", column.added],
+    ["Saldo", column.total],
+  ];
+
   return (
-    <span className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-      <span
-        aria-hidden="true"
-        className="size-3 border-2 border-line"
-        style={{ background: fill }}
-      />
-      {children}
-    </span>
+    <div
+      className="border-[3px] border-line bg-surface px-3 py-2 text-xs font-semibold text-foreground"
+      style={{ boxShadow: "var(--shadow-hard-sm)" }}
+    >
+      <p className="mb-1.5 font-bold uppercase">
+        {formatDate(column.key, fund.locale)}
+      </p>
+      <dl className="space-y-1">
+        {rows.map(([label, cents], i) => (
+          <div
+            key={label}
+            className={
+              i === rows.length - 1
+                ? "flex justify-between gap-6 border-t-2 border-line pt-1 font-bold"
+                : "flex justify-between gap-6"
+            }
+          >
+            <dt>{label}</dt>
+            <dd className="tabular-nums">
+              {formatCents(cents, fund.currency, fund.locale)}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
   );
 }
 
@@ -227,10 +256,9 @@ export default function BalanceChart({
         <h2 id="growth-heading" className="eyebrow">
           Crescimento
         </h2>
-        <div className="flex items-center gap-3">
-          <LegendKey fill="var(--chart-carried)">Acumulado</LegendKey>
-          <LegendKey fill="var(--accent)">Depositado</LegendKey>
-        </div>
+        <p className="text-xs font-bold text-muted">
+          Toque numa coluna para ver os detalhes
+        </p>
       </div>
 
       {/* The columns encode the balance; this table is the same reading for
@@ -281,26 +309,12 @@ export default function BalanceChart({
                 tickFormatter={(v: number) => compact.format(v / 100)}
               />
 
+              {/* Click rather than hover: the chart is read on phones, where
+                  there is no hover, and the breakdown is opt-in detail. */}
               <Tooltip
+                trigger="click"
                 cursor={{ fill: "var(--surface-hover)", fillOpacity: 0.6 }}
-                contentStyle={{
-                  borderRadius: 0,
-                  border: "3px solid var(--line)",
-                  background: "var(--surface)",
-                  color: "var(--foreground)",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  boxShadow: "var(--shadow-hard-sm)",
-                }}
-                labelStyle={{ color: "var(--foreground)", fontWeight: 700 }}
-                labelFormatter={(_label, items) => {
-                  const key = items?.[0]?.payload?.key;
-                  return key ? formatDate(String(key), fund.locale) : "";
-                }}
-                formatter={(value, name) => [
-                  formatCents(Number(value), fund.currency, fund.locale),
-                  name === "added" ? "Depositado" : "Acumulado",
-                ]}
+                content={<Breakdown fund={fund} />}
               />
 
               <ReferenceLine
@@ -318,23 +332,14 @@ export default function BalanceChart({
               />
 
               <Bar
-                dataKey="carried"
-                stackId="balance"
-                fill="var(--chart-carried)"
-                maxBarSize={28}
-                isAnimationActive={!reducedMotion}
-                shape={<Segment />}
-              />
-              <Bar
-                dataKey="added"
-                stackId="balance"
+                dataKey="total"
                 fill="var(--accent)"
                 maxBarSize={28}
                 isAnimationActive={!reducedMotion}
                 shape={<Segment />}
               >
                 {/* Only the latest column is labelled — a number on every column
-                    goes unread, and the axis and tooltip carry the rest. */}
+                    goes unread, and the axis and breakdown carry the rest. */}
                 <LabelList
                   position="top"
                   offset={8}
