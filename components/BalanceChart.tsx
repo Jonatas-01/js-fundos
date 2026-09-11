@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -16,23 +16,21 @@ import { formatCents, formatDate } from "@/lib/money";
 import type { Deposit, Fund } from "@/app/page";
 
 /**
- * One column per period, stacked into two parts: what the fund was already
- * worth when the period opened, and what was put in during it. Column height
- * is the running balance, so the chart reads as growth, while the solid cap
- * shows the period's own contribution without needing a second axis.
+ * One column per day, stacked into two parts: what the fund was already worth
+ * when the day opened, and what was put in during it. Column height is the
+ * running balance, so the chart reads as growth, while the solid cap shows the
+ * day's own contribution without needing a second axis.
  */
 type Column = {
   key: string;
   label: string;
-  /** Balance carried into the period. */
+  /** Balance carried into the day. */
   carried: number;
-  /** Deposited during the period. */
+  /** Deposited during the day. */
   added: number;
-  /** Balance at the end of the period — the full column height. */
+  /** Balance at the end of the day — the full column height. */
   total: number;
 };
-
-const DAY_MS = 86_400_000;
 
 function parseISO(iso: string): Date {
   const [y, m, d] = iso.split("-").map(Number);
@@ -45,69 +43,75 @@ function toISO(date: Date): string {
   return `${date.getFullYear()}-${m}-${d}`;
 }
 
-/** Monday of the week `date` falls in. */
-function weekStart(date: Date): Date {
-  const d = new Date(date);
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-  return d;
-}
+/** How many days of history the chart shows at once. */
+const WINDOW_DAYS = 40;
 
 /**
- * A short history reads better week by week; past ~ten weeks the columns would
- * crowd, so it rolls up to months. Empty periods are kept either way — a month
- * where nothing was saved is part of the story, and dropping it would make the
- * spacing lie about time.
+ * One column per calendar day for the last {@link WINDOW_DAYS} days, ending
+ * today. Days with no deposit are kept and carry the balance forward, so the
+ * x-axis is a real timeline: a pause in saving reads as flat columns rather
+ * than being squeezed out of existence.
+ *
+ * Anything saved before the window is not lost — it becomes the carried
+ * balance of the first visible column, so column height is always the true
+ * running total, never just the window's own deposits.
+ *
+ * The range ends at today rather than at the last deposit; otherwise the final
+ * column would imply the fund was last worth something weeks ago.
  */
 function buildColumns(deposits: Deposit[], locale: string): Column[] {
   if (deposits.length === 0) return [];
 
-  const times = deposits.map((d) => parseISO(d.occurred_on).getTime());
-  const first = new Date(Math.min(...times));
-  const last = new Date(Math.max(...times));
-  const byWeek = (last.getTime() - first.getTime()) / DAY_MS <= 70;
-
-  const bucketOf = (date: Date) =>
-    byWeek
-      ? weekStart(date)
-      : new Date(date.getFullYear(), date.getMonth(), 1);
-
   const added = new Map<string, number>();
   for (const d of deposits) {
-    const key = toISO(bucketOf(parseISO(d.occurred_on)));
-    added.set(key, (added.get(key) ?? 0) + d.amount_cents);
+    added.set(d.occurred_on, (added.get(d.occurred_on) ?? 0) + d.amount_cents);
   }
 
-  const month = new Intl.DateTimeFormat(locale, { month: "short" });
+  const times = deposits.map((d) => parseISO(d.occurred_on).getTime());
+  const first = new Date(Math.min(...times));
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  // Deposits cannot be future-dated, but clock skew across devices could still
+  // land one past midnight here; take whichever is later so the loop ends.
+  const last = new Date(Math.max(Math.max(...times), today.getTime()));
+
+  const windowStart = new Date(today);
+  windowStart.setDate(windowStart.getDate() - (WINDOW_DAYS - 1));
+  // A short history starts at the first deposit: padding empty days before it
+  // would invent a stretch of saving that never happened.
+  const start = first > windowStart ? first : windowStart;
+  const startKey = toISO(start);
+
+  // Fold everything before the window into the opening balance. ISO dates sort
+  // lexicographically, so a string compare is the whole test.
+  let running = 0;
+  for (const d of deposits) {
+    if (d.occurred_on < startKey) running += d.amount_cents;
+  }
+
   const dayMonth = new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
   });
-  const spansYears = first.getFullYear() !== last.getFullYear();
 
   const columns: Column[] = [];
-  const cursor = bucketOf(first);
-  let running = 0;
+  const cursor = new Date(start);
 
   while (cursor <= last) {
     const key = toISO(cursor);
-    const inPeriod = added.get(key) ?? 0;
-    const year = String(cursor.getFullYear()).slice(2);
+    const inDay = added.get(key) ?? 0;
 
     columns.push({
       key,
-      label: byWeek
-        ? dayMonth.format(cursor)
-        : spansYears && cursor.getMonth() === 0
-          ? `${month.format(cursor)} '${year}`
-          : month.format(cursor),
+      label: dayMonth.format(cursor),
       carried: running,
-      added: inPeriod,
-      total: running + inPeriod,
+      added: inDay,
+      total: running + inDay,
     });
 
-    running += inPeriod;
-    if (byWeek) cursor.setDate(cursor.getDate() + 7);
-    else cursor.setMonth(cursor.getMonth() + 1);
+    running += inDay;
+    cursor.setDate(cursor.getDate() + 1);
   }
 
   return columns;
@@ -145,8 +149,13 @@ type ShapeProps = {
  * neighbouring column.
  */
 function Segment({ x = 0, y = 0, width = 0, height = 0, fill }: ShapeProps) {
-  const sw = 2;
-  if (height <= sw || width <= sw) return null;
+  if (height <= 0 || width <= 0) return null;
+
+  // Daily columns get narrower as the history grows. A fixed 2px outline would
+  // eventually be wider than the column itself, so it thins with the column
+  // rather than swallowing it — a fixed width here made the whole chart
+  // disappear once the range passed roughly three months.
+  const sw = Math.min(2, width / 3, height);
 
   return (
     <rect
@@ -192,7 +201,13 @@ export default function BalanceChart({
   fund: Fund;
 }) {
   const reducedMotion = useReducedMotion();
-  const data = buildColumns(deposits, fund.locale);
+  // Stable identity matters: Recharts restarts its entrance animation whenever
+  // `data` changes, and a fresh array every render leaves the bars frozen at
+  // height 0 forever.
+  const data = useMemo(
+    () => buildColumns(deposits, fund.locale),
+    [deposits, fund.locale],
+  );
 
   if (data.length === 0) return null;
 
@@ -222,12 +237,12 @@ export default function BalanceChart({
           anyone who cannot see them. */}
       <table className="sr-only">
         <caption>
-          Saldo acumulado por período, com meta de{" "}
+          Saldo acumulado por dia nos últimos {WINDOW_DAYS} dias, com meta de{" "}
           {formatCents(fund.goal_cents, fund.currency, fund.locale)}.
         </caption>
         <thead>
           <tr>
-            <th scope="col">Período a partir de</th>
+            <th scope="col">Dia</th>
             <th scope="col">Depositado</th>
             <th scope="col">Saldo</th>
           </tr>
