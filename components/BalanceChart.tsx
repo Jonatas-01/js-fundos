@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -237,6 +237,34 @@ export default function BalanceChart({
     [deposits, fund.locale],
   );
 
+  // Recharts' click-triggered tooltip "shows after clicking and stays active"
+  // by design — it ships no dismiss of its own, so visibility is driven here.
+  const [detailOpen, setDetailOpen] = useState(false);
+  const chartRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!detailOpen) return;
+
+    // pointerdown rather than click: it fires before the chart's own click
+    // handler, so tapping from one column straight to another still reopens
+    // rather than leaving the panel shut.
+    const onPointerDown = (event: PointerEvent) => {
+      if (!chartRef.current?.contains(event.target as Node)) {
+        setDetailOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDetailOpen(false);
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [detailOpen]);
+
   if (data.length === 0) return null;
 
   // Headroom for the value sitting on the last column's cap. `latest` is always
@@ -286,9 +314,13 @@ export default function BalanceChart({
       </table>
 
       <div className="p-5">
-        <div className="h-56 w-full" aria-hidden="true">
+        <div className="h-56 w-full" aria-hidden="true" ref={chartRef}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 20, right: 8, bottom: 0, left: 0 }}>
+            <BarChart
+              data={data}
+              margin={{ top: 20, right: 8, bottom: 0, left: 0 }}
+              onClick={() => setDetailOpen(true)}
+            >
               <CartesianGrid stroke="var(--line)" strokeOpacity={0.25} vertical={false} />
 
               <XAxis
@@ -312,6 +344,7 @@ export default function BalanceChart({
                   there is no hover, and the breakdown is opt-in detail. */}
               <Tooltip
                 trigger="click"
+                active={detailOpen}
                 cursor={{ fill: "var(--surface-hover)", fillOpacity: 0.6 }}
                 content={<Breakdown fund={fund} />}
               />
