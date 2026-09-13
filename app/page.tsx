@@ -5,7 +5,6 @@ import Dashboard from "@/components/Dashboard";
 export type Fund = {
   id: string;
   name: string;
-  goal_cents: number;
   currency: string;
   locale: string;
 };
@@ -60,7 +59,7 @@ export default async function Home() {
 
   const { data: fund } = await supabase
     .from("fund")
-    .select("id, name, goal_cents, currency, locale")
+    .select("id, name, currency, locale")
     .limit(1)
     .single();
 

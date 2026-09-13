@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { signOut } from "@/app/actions";
-import ProgressHeader from "./ProgressHeader";
+import BalanceHeader from "./BalanceHeader";
 import BalanceChart from "./BalanceChart";
 import DepositForm from "./DepositForm";
 import DepositList from "./DepositList";
@@ -49,10 +49,10 @@ export default function Dashboard({
       </header>
 
       <div className="space-y-6">
-        <ProgressHeader
+        <BalanceHeader
           fund={fund}
           totalCents={totalCents}
-          onEditGoal={() => setSettingsOpen(true)}
+          onOpenSettings={() => setSettingsOpen(true)}
         />
         <BalanceChart deposits={deposits} fund={fund} />
         <DepositForm currency={fund.currency} />

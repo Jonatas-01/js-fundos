@@ -28,7 +28,6 @@ export default function GraficoPreview() {
 const FUND: Fund = {
   id: "preview",
   name: "J&S Fundos",
-  goal_cents: 500000,
   currency: "BRL",
   locale: "pt-BR",
 };

@@ -6,7 +6,6 @@ import {
   BarChart,
   CartesianGrid,
   LabelList,
-  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -240,10 +239,11 @@ export default function BalanceChart({
 
   if (data.length === 0) return null;
 
+  // Headroom for the value sitting on the last column's cap. `latest` is always
+  // above zero here: the series is empty only when there are no deposits, and
+  // that case returned null above.
   const latest = data[data.length - 1].total;
-  // Keep the goal line in frame so the remaining gap is always visible, with
-  // headroom for the value sitting on the last column's cap.
-  const max = Math.max(fund.goal_cents, latest) * 1.12;
+  const max = latest * 1.12;
 
   const compact = new Intl.NumberFormat(fund.locale, {
     notation: "compact",
@@ -265,8 +265,7 @@ export default function BalanceChart({
           anyone who cannot see them. */}
       <table className="sr-only">
         <caption>
-          Saldo acumulado por dia nos últimos {WINDOW_DAYS} dias, com meta de{" "}
-          {formatCents(fund.goal_cents, fund.currency, fund.locale)}.
+          Saldo acumulado por dia nos últimos {WINDOW_DAYS} dias.
         </caption>
         <thead>
           <tr>
@@ -315,20 +314,6 @@ export default function BalanceChart({
                 trigger="click"
                 cursor={{ fill: "var(--surface-hover)", fillOpacity: 0.6 }}
                 content={<Breakdown fund={fund} />}
-              />
-
-              <ReferenceLine
-                y={fund.goal_cents}
-                stroke="var(--goal)"
-                strokeDasharray="6 4"
-                strokeWidth={3}
-                label={{
-                  value: "META",
-                  position: "insideTopRight",
-                  fontSize: 11,
-                  fontWeight: 800,
-                  fill: "var(--goal)",
-                }}
               />
 
               <Bar

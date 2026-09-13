@@ -12,7 +12,7 @@ async function loadFund() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("fund")
-    .select("id, goal_cents, currency, locale")
+    .select("id, currency, locale")
     .limit(1)
     .single();
   return { supabase, fund: data };
@@ -125,14 +125,11 @@ export async function updateFund(
   const currency = String(formData.get("currency") ?? "BRL").toUpperCase();
   const locale = String(formData.get("locale") ?? "pt-BR");
 
-  const goal = parseAmountToCents(String(formData.get("goal") ?? ""));
-  if (goal === null) return { error: "Informe uma meta maior que zero." };
-
   if (!/^[A-Z]{3}$/.test(currency)) return { error: "A moeda deve ter 3 letras." };
 
   const { error } = await supabase
     .from("fund")
-    .update({ goal_cents: goal, currency, locale })
+    .update({ currency, locale })
     .eq("id", fund.id);
   if (error) return { error: error.message };
 
