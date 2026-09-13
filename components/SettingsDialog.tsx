@@ -2,7 +2,6 @@
 
 import { useActionState } from "react";
 import { updateFund, setDisplayName, type ActionState } from "@/app/actions";
-import { centsToInputValue } from "@/lib/money";
 import Dialog from "./Dialog";
 import { CheckIcon } from "./icons";
 import { btnGhost, btnPrimary, inputClass, labelClass } from "./ui";
@@ -40,21 +39,6 @@ export default function SettingsDialog({
   return (
     <Dialog title="Configurações" onClose={onClose}>
       <form action={fundAction} className="space-y-3">
-        <div>
-          <label className={labelClass} htmlFor="goal">
-            Meta de economia
-          </label>
-          <input
-            id="goal"
-            name="goal"
-            type="text"
-            inputMode="decimal"
-            required
-            defaultValue={centsToInputValue(fund.goal_cents, fund.locale)}
-            className={`${inputClass} mt-1.5 tabular-nums`}
-          />
-        </div>
-
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelClass} htmlFor="currency">
@@ -92,10 +76,10 @@ export default function SettingsDialog({
           </div>
         </div>
 
-        <FormFeedback state={fundState} okText="Meta salva." />
+        <FormFeedback state={fundState} okText="Configurações salvas." />
 
         <button type="submit" disabled={fundPending} className={btnPrimary}>
-          {fundPending ? "Salvando…" : "Salvar meta"}
+          {fundPending ? "Salvando…" : "Salvar"}
         </button>
       </form>
 

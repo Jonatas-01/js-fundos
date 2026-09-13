@@ -6,7 +6,6 @@ import {
   BarChart,
   CartesianGrid,
   LabelList,
-  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -240,10 +239,11 @@ export default function BalanceChart({
 
   if (data.length === 0) return null;
 
+  // Headroom for the value sitting on the last column's cap. `latest` is always
+  // above zero here: the series is empty only when there are no deposits, and
+  // that case returned null above.
   const latest = data[data.length - 1].total;
-  // Keep the goal line in frame so the remaining gap is always visible, with
-  // headroom for the value sitting on the last column's cap.
-  const max = Math.max(fund.goal_cents, latest) * 1.12;
+  const max = latest * 1.12;
 
   const compact = new Intl.NumberFormat(fund.locale, {
     notation: "compact",
@@ -265,8 +265,7 @@ export default function BalanceChart({
           anyone who cannot see them. */}
       <table className="sr-only">
         <caption>
-          Saldo acumulado por dia nos últimos {WINDOW_DAYS} dias, com meta de{" "}
-          {formatCents(fund.goal_cents, fund.currency, fund.locale)}.
+          Saldo acumulado por dia nos últimos {WINDOW_DAYS} dias.
         </caption>
         <thead>
           <tr>
@@ -317,20 +316,6 @@ export default function BalanceChart({
                 content={<Breakdown fund={fund} />}
               />
 
-              <ReferenceLine
-                y={fund.goal_cents}
-                stroke="var(--goal)"
-                strokeDasharray="6 4"
-                strokeWidth={3}
-                label={{
-                  value: "META",
-                  position: "insideTopRight",
-                  fontSize: 11,
-                  fontWeight: 800,
-                  fill: "var(--goal)",
-                }}
-              />
-
               <Bar
                 dataKey="total"
                 fill="var(--accent)"
@@ -341,20 +326,36 @@ export default function BalanceChart({
                 {/* Only the latest column is labelled — a number on every column
                     goes unread, and the axis and breakdown carry the rest. */}
                 <LabelList
-                  position="top"
-                  offset={8}
-                  fontSize={11}
-                  fontWeight={800}
-                  fill="var(--foreground)"
-                  valueAccessor={(entry, index) =>
-                    index === data.length - 1
-                      ? formatCents(
-                          (entry.payload as Column).total,
+                  content={(props) => {
+                    const { x, y, width, index } = props as {
+                      x?: number;
+                      y?: number;
+                      width?: number;
+                      index?: number;
+                    };
+                    if (index !== data.length - 1) return null;
+                    if (x == null || y == null || width == null) return null;
+
+                    // Right-aligned to the column's edge rather than centred on
+                    // it: the newest column is always hard against the right of
+                    // the plot, so a centred label runs off the card.
+                    return (
+                      <text
+                        x={x + width}
+                        y={y - 8}
+                        textAnchor="end"
+                        fontSize={11}
+                        fontWeight={800}
+                        fill="var(--foreground)"
+                      >
+                        {formatCents(
+                          data[index].total,
                           fund.currency,
                           fund.locale,
-                        )
-                      : ""
-                  }
+                        )}
+                      </text>
+                    );
+                  }}
                 />
               </Bar>
             </BarChart>
