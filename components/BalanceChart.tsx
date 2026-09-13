@@ -326,20 +326,36 @@ export default function BalanceChart({
                 {/* Only the latest column is labelled — a number on every column
                     goes unread, and the axis and breakdown carry the rest. */}
                 <LabelList
-                  position="top"
-                  offset={8}
-                  fontSize={11}
-                  fontWeight={800}
-                  fill="var(--foreground)"
-                  valueAccessor={(entry, index) =>
-                    index === data.length - 1
-                      ? formatCents(
-                          (entry.payload as Column).total,
+                  content={(props) => {
+                    const { x, y, width, index } = props as {
+                      x?: number;
+                      y?: number;
+                      width?: number;
+                      index?: number;
+                    };
+                    if (index !== data.length - 1) return null;
+                    if (x == null || y == null || width == null) return null;
+
+                    // Right-aligned to the column's edge rather than centred on
+                    // it: the newest column is always hard against the right of
+                    // the plot, so a centred label runs off the card.
+                    return (
+                      <text
+                        x={x + width}
+                        y={y - 8}
+                        textAnchor="end"
+                        fontSize={11}
+                        fontWeight={800}
+                        fill="var(--foreground)"
+                      >
+                        {formatCents(
+                          data[index].total,
                           fund.currency,
                           fund.locale,
-                        )
-                      : ""
-                  }
+                        )}
+                      </text>
+                    );
+                  }}
                 />
               </Bar>
             </BarChart>
