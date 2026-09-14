@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Segment, useReducedMotion } from "./chart";
 import {
   Bar,
   BarChart,
@@ -116,59 +117,6 @@ function buildColumns(deposits: Deposit[], locale: string): Column[] {
   }
 
   return columns;
-}
-
-/** Recharts animates on mount by default; that is decorative, so it goes. */
-function useReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => setReduced(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
-  return reduced;
-}
-
-type ShapeProps = {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  fill?: string;
-};
-
-/**
- * Square-cornered columns outlined in the same black as every border on the
- * page. Recharts' default bar ignores a stroke on a stacked series, and the
- * outline is what makes the two flat fills read as blocks rather than as a
- * gradient, so the shape is drawn here instead.
- *
- * The stroke is drawn inset by half its width: an SVG stroke straddles the
- * path, so without the inset the outline would hang over the baseline and the
- * neighbouring column.
- */
-function Segment({ x = 0, y = 0, width = 0, height = 0, fill }: ShapeProps) {
-  if (height <= 0 || width <= 0) return null;
-
-  // Daily columns get narrower as the history grows. A fixed 2px outline would
-  // eventually be wider than the column itself, so it thins with the column
-  // rather than swallowing it — a fixed width here made the whole chart
-  // disappear once the range passed roughly three months.
-  const sw = Math.min(2, width / 3, height);
-
-  return (
-    <rect
-      x={x + sw / 2}
-      y={y + sw / 2}
-      width={width - sw}
-      height={height - sw / 2}
-      fill={fill}
-      stroke="var(--line)"
-      strokeWidth={sw}
-    />
-  );
 }
 
 type BreakdownProps = {
@@ -291,7 +239,8 @@ export default function BalanceChart({
 
       {/* The columns encode the balance; this table is the same reading for
           anyone who cannot see them. */}
-      <table className="sr-only">
+      <div className="sr-only">
+        <table>
         <caption>
           Saldo acumulado por dia nos últimos {WINDOW_DAYS} dias.
         </caption>
@@ -311,7 +260,8 @@ export default function BalanceChart({
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
+      </div>
 
       <div className="p-5">
         <div className="h-56 w-full" aria-hidden="true" ref={chartRef}>
@@ -320,6 +270,10 @@ export default function BalanceChart({
               data={data}
               margin={{ top: 20, right: 8, bottom: 0, left: 0 }}
               onClick={() => setDetailOpen(true)}
+              // See MonthlyChart: the accessibility layer makes the <svg>
+              // focusable, which draws a focus ring around the whole plot on
+              // click. The sr-only table is this chart's accessible equivalent.
+              accessibilityLayer={false}
             >
               <CartesianGrid stroke="var(--line)" strokeOpacity={0.25} vertical={false} />
 
