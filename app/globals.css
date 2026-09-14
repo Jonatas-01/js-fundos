@@ -162,6 +162,16 @@ body {
   outline-offset: 3px;
 }
 
+/* Recharts marks every internal layer <g> with tabindex="-1", so clicking a
+   column focuses one and the rule above boxes the entire plot area. Those
+   layers are decorative: the charts are aria-hidden and each ships an sr-only
+   table as its accessible equivalent, so nothing here is meant to take focus
+   and no ring belongs on it. */
+.recharts-wrapper :focus,
+.recharts-wrapper :focus-visible {
+  outline: none;
+}
+
 :where(button, [role="button"], summary):not(:disabled) {
   cursor: pointer;
 }
