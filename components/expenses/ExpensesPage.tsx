@@ -14,12 +14,14 @@ import {
   type MonthKey,
 } from "@/lib/month";
 import Masthead from "@/components/Masthead";
+import { SettingsIcon } from "@/components/icons";
 import { btnGhost, btnQuiet } from "@/components/ui";
 import MonthlyChart from "./MonthlyChart";
 import CategoryBreakdown from "./CategoryBreakdown";
 import ExpenseForm from "./ExpenseForm";
 import ExpenseList, { type Upcoming } from "./ExpenseList";
 import RecurringDialog from "./RecurringDialog";
+import SettingsDialog from "@/components/SettingsDialog";
 import type { Expense, RecurringExpense } from "@/app/despesas/page";
 import type { Fund } from "@/app/page";
 
@@ -29,15 +31,18 @@ export default function ExpensesPage({
   months,
   expenses,
   recurring,
+  displayName,
 }: {
   fund: Fund;
   month: MonthKey;
   months: MonthKey[];
   expenses: Expense[];
   recurring: RecurringExpense[];
+  displayName: string;
 }) {
   const router = useRouter();
   const [recurringOpen, setRecurringOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Generating occurrences is a write, and a server component must not mutate
   // while rendering — so it happens here, once per mount, and only refreshes
@@ -134,12 +139,21 @@ export default function ExpensesPage({
               </p>
             </div>
 
-            <button
-              onClick={() => setRecurringOpen(true)}
-              className={btnGhost + " shrink-0"}
-            >
-              Fixas
-            </button>
+            {/* Settings lives here as well as on the Fundo page: currency and
+                format apply to both, and having to cross to the other page to
+                change them is a dead end. */}
+            <div className="flex shrink-0 items-center gap-2">
+              <button onClick={() => setRecurringOpen(true)} className={btnGhost}>
+                Fixas
+              </button>
+              <button
+                onClick={() => setSettingsOpen(true)}
+                className={btnQuiet}
+                aria-label="Abrir configurações"
+              >
+                <SettingsIcon className="size-4" />
+              </button>
+            </div>
           </div>
         </section>
 
@@ -157,6 +171,14 @@ export default function ExpensesPage({
         <ExpenseForm currency={fund.currency} />
         <ExpenseList expenses={monthExpenses} upcoming={upcoming} fund={fund} />
       </div>
+
+      {settingsOpen && (
+        <SettingsDialog
+          fund={fund}
+          displayName={displayName}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
 
       {recurringOpen && (
         <RecurringDialog

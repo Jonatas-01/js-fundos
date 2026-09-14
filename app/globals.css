@@ -56,6 +56,11 @@
      of a faded copy of the ink, because neo-brutalism has no tints. */
   --chart-carried: #4ecdc4;
 
+  /* An eighth hue, for the expense categories only. Nothing else in the
+     palette is blue, so it cannot be mistaken for the violet, teal or green
+     already carrying a category. */
+  --chart-blue: #1450a3;
+
   --radius: 0px;
   --border-width: 3px;
   --shadow-hard: 6px 6px 0 0 var(--shadow);

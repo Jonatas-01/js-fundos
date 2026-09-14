@@ -59,24 +59,30 @@ export default async function Despesas({
   // Currency and locale are the fund's — the only formatting settings the app
   // has. The expenses themselves are private; only the display format is
   // shared.
-  const [{ data: fund }, { data: expenses }, { data: recurring }] = await Promise.all([
-    supabase.from("fund").select("id, name, currency, locale").limit(1).single(),
-    // RLS already restricts this to the signed-in user; the explicit filter
-    // states the intent at the call site too.
-    supabase
-      .from("expense")
-      .select("id, name, amount_cents, category, method, occurred_on, recurring_id")
-      .eq("user_id", user.id)
-      .gte("occurred_on", monthStart(months[0]))
-      .lte("occurred_on", monthEnd(month))
-      .order("occurred_on", { ascending: false }),
-    supabase
-      .from("recurring_expense")
-      .select("id, name, amount_cents, category, method, day_of_month")
-      .eq("user_id", user.id)
-      .eq("active", true)
-      .order("day_of_month", { ascending: true }),
-  ]);
+  const [{ data: fund }, { data: expenses }, { data: recurring }, { data: profile }] =
+    await Promise.all([
+      supabase.from("fund").select("id, name, currency, locale").limit(1).single(),
+      // RLS already restricts this to the signed-in user; the explicit filter
+      // states the intent at the call site too.
+      supabase
+        .from("expense")
+        .select("id, name, amount_cents, category, method, occurred_on, recurring_id")
+        .eq("user_id", user.id)
+        .gte("occurred_on", monthStart(months[0]))
+        .lte("occurred_on", monthEnd(month))
+        .order("occurred_on", { ascending: false }),
+      supabase
+        .from("recurring_expense")
+        .select("id, name, amount_cents, category, method, day_of_month")
+        .eq("user_id", user.id)
+        .eq("active", true)
+        .order("day_of_month", { ascending: true }),
+      supabase
+        .from("profile")
+        .select("display_name")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+    ]);
 
   const display: Fund = fund ?? {
     id: "none",
@@ -92,6 +98,7 @@ export default async function Despesas({
       months={months}
       expenses={(expenses ?? []) as Expense[]}
       recurring={(recurring ?? []) as RecurringExpense[]}
+      displayName={profile?.display_name ?? user.email?.split("@")[0] ?? "Você"}
     />
   );
 }
