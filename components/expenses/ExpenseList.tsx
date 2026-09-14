@@ -52,9 +52,14 @@ export default function ExpenseList({
           Nenhuma despesa neste mês ainda.
         </p>
       ) : (
-        days.map(([date, rows]) => (
-          <div key={date}>
-            <h3 className="border-b-[3px] border-line bg-surface-soft/60 px-5 py-1.5 text-[11px] font-extrabold uppercase tracking-wide text-muted">
+        days.map(([date, rows], i) => (
+          // The rule goes above the date, not below it. With a border only
+          // underneath, nothing separated a date from the rows above it, so it
+          // read as the closing line of the previous day rather than the
+          // heading of its own. The first group needs none: the section header
+          // already provides that edge.
+          <div key={date} className={i > 0 ? "border-t-[3px] border-line" : undefined}>
+            <h3 className="bg-surface-soft/60 px-5 py-1.5 text-[11px] font-extrabold uppercase tracking-wide text-muted">
               {formatDate(date, fund.locale)}
             </h3>
             <ul className="divide-y-[3px] divide-line">
