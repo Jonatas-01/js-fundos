@@ -10,6 +10,7 @@
 export const CATEGORIES = [
   { value: "moradia", label: "Moradia" },
   { value: "mercado", label: "Mercado" },
+  { value: "restaurante", label: "Restaurante/Delivery" },
   { value: "transporte", label: "Transporte" },
   { value: "saude", label: "Saúde" },
   { value: "lazer", label: "Lazer" },
@@ -54,6 +55,7 @@ export function methodLabel(value: string): string {
 export const CATEGORY_COLOR: Record<string, string> = {
   moradia: "var(--goal)",
   mercado: "var(--success)",
+  restaurante: "var(--chart-blue)",
   transporte: "var(--chart-carried)",
   saude: "var(--danger)",
   lazer: "var(--accent-hover)",

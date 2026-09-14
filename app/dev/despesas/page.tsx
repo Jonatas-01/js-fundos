@@ -35,6 +35,7 @@ export default async function DespesasPreview({
       months={monthWindow(month, 4)}
       expenses={EXPENSES}
       recurring={RECURRING}
+      displayName="Jonatas"
     />
   );
 }
@@ -83,6 +84,9 @@ const ROWS: [number, number, string, number, string, string, string | null][] = 
   [0, 5, "Aluguel", 150000, "moradia", "debito", "r1"],
   [0, 8, "Mercado", 43500, "mercado", "debito", null],
   [0, 11, "Padaria", 2800, "mercado", "dinheiro", null],
+  [0, 11, "iFood", 6700, "restaurante", "credito", null],
+  [1, 19, "Pizzaria", 9800, "restaurante", "pix", null],
+  [2, 21, "Delivery", 5400, "restaurante", "credito", null],
   [0, 12, "Gasolina", 25000, "transporte", "credito", null],
 ];
 
