@@ -293,8 +293,9 @@ export async function syncRecurring(): Promise<{ created: number }> {
 
   if (!rows.length) return { created: 0 };
 
-  // ignoreDuplicates leans on expense_recurring_month_idx: if two devices open
-  // the same month at once, the loser inserts nothing rather than erroring.
+  // ignoreDuplicates leans on expense_recurring_date_idx, whose columns this
+  // onConflict target must match exactly: if two devices open the same month at
+  // once, the loser inserts nothing rather than erroring.
   const { error } = await supabase
     .from("expense")
     .upsert(rows, { onConflict: "recurring_id,occurred_on", ignoreDuplicates: true });

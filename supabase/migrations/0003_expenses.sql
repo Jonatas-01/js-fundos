@@ -56,9 +56,20 @@ create index if not exists expense_user_date_idx on expense (user_id, occurred_o
 create index if not exists recurring_user_idx on recurring_expense (user_id, active);
 
 -- Belt and braces against double generation when two devices open the same
--- month at once: one template yields at most one row per calendar month.
-create unique index if not exists expense_recurring_month_idx
-  on expense (recurring_id, (date_trunc('month', occurred_on)))
+-- month at once.
+--
+-- On the plain columns rather than on date_trunc('month', occurred_on), for two
+-- reasons. An index expression must be IMMUTABLE, and date_trunc over a date
+-- resolves to the timestamptz overload, which is only STABLE because it depends
+-- on the session timezone. And ON CONFLICT must name an existing unique index
+-- exactly, so the upsert in syncRecurring could never have matched an
+-- expression index.
+--
+-- The guarantee is the same in practice: a rule's date for a given month is
+-- deterministic, so two generations of the same month produce the same date and
+-- collide here.
+create unique index if not exists expense_recurring_date_idx
+  on expense (recurring_id, occurred_on)
   where recurring_id is not null;
 
 -- ---------------------------------------------------------------------------
