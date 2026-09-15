@@ -39,7 +39,7 @@ export default function SettingsDialog({
   return (
     <Dialog title="Configurações" onClose={onClose}>
       <form action={fundAction} className="space-y-3">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label className={labelClass} htmlFor="currency">
               Moeda
