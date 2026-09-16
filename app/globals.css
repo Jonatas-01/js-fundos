@@ -161,6 +161,49 @@ body {
   color: var(--foreground);
 }
 
+/* A placeholder standing in for a block that has not arrived yet. The two
+   fills are the ones already used for a soft surface and its hover, and the
+   step between them is instant: an eased fade would be the tint this design
+   does not have. The global prefers-reduced-motion rule below stops it. */
+@keyframes skeleton-blink {
+  to {
+    background: var(--surface-hover);
+  }
+}
+
+@utility skeleton {
+  background: var(--surface-soft);
+  border: var(--border-width) solid var(--line);
+  border-radius: var(--radius);
+  animation: skeleton-blink 700ms steps(1, end) infinite alternate;
+}
+
+/* The pending dot inside a link. Always in the layout so it cannot shift the
+   arrow it sits next to, and invisible for the first 120ms so a navigation
+   that resolves quickly never flashes it. */
+@utility link-pending {
+  width: 0.5rem;
+  height: 0.5rem;
+  border: 2px solid var(--line);
+  background: var(--line);
+  visibility: hidden;
+  opacity: 0;
+
+  &[data-pending="true"] {
+    visibility: visible;
+    animation: link-pending-blink 600ms steps(1, end) 120ms infinite alternate;
+  }
+}
+
+@keyframes link-pending-blink {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.25;
+  }
+}
+
 /* A hard black focus ring, sized to be as loud as the borders around it. */
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
   outline: 3px solid var(--foreground);
