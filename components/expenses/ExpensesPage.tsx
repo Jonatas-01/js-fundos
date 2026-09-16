@@ -14,6 +14,7 @@ import {
   type MonthKey,
 } from "@/lib/month";
 import Masthead from "@/components/Masthead";
+import LinkPending from "@/components/LinkPending";
 import { SettingsIcon } from "@/components/icons";
 import { btnGhost, btnQuiet } from "@/components/ui";
 import MonthlyChart from "./MonthlyChart";
@@ -101,12 +102,16 @@ export default function ExpensesPage({
       <div className="space-y-6">
         <section className="card overflow-hidden" aria-labelledby="month-heading">
           <div className="flex items-stretch justify-between border-b-[3px] border-line bg-surface-soft">
+            {/* A month change only swaps ?mes=, so the segment never unmounts
+                and the route's loading.tsx may not re-fire — the dot is the
+                feedback for that case. */}
             <Link
               href={`/despesas?mes=${previous}`}
               className={btnQuiet + " px-4"}
               aria-label="Mês anterior"
             >
               ←
+              <LinkPending />
             </Link>
             <h2
               id="month-heading"
@@ -127,6 +132,7 @@ export default function ExpensesPage({
                 aria-label="Próximo mês"
               >
                 →
+                <LinkPending />
               </Link>
             )}
           </div>
