@@ -171,6 +171,7 @@ export default function ExpensesPage({
         />
         <CategoryBreakdown
           totals={categoryTotals}
+          expenses={monthExpenses}
           monthTotal={monthTotal}
           fund={fund}
         />
