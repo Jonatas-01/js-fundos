@@ -168,6 +168,12 @@ export async function addRecurring(
   });
   if (error) return { error: error.message };
 
+  // Generate right away rather than waiting for the next mount. The page that
+  // submitted this form stays mounted, so its once-per-mount sync will not run
+  // again: without this, a rule added on the 19th for day 17 shows up neither
+  // as spent nor as upcoming until the user happens to reload.
+  await syncRecurring();
+
   revalidatePath("/despesas");
   return { ok: true };
 }
@@ -203,6 +209,10 @@ export async function updateRecurring(
     .eq("id", id)
     .eq("user_id", user.id);
   if (error) return { error: error.message };
+
+  // Moving the day earlier can bring this month's occurrence into the past, so
+  // catch up here for the same reason addRecurring does.
+  await syncRecurring();
 
   revalidatePath("/despesas");
   return { ok: true };
@@ -299,7 +309,13 @@ export async function syncRecurring(): Promise<{ created: number }> {
   const { error } = await supabase
     .from("expense")
     .upsert(rows, { onConflict: "recurring_id,occurred_on", ignoreDuplicates: true });
-  if (error) return { created: 0 };
+  if (error) {
+    // Loud on the server: a silent return here is what hid the broken conflict
+    // target for as long as it did. The caller still degrades quietly, because
+    // a failed catch-up is not something the user can act on.
+    console.error("syncRecurring: could not write occurrences", error);
+    return { created: 0 };
+  }
 
   for (const a of advanced) {
     await supabase
