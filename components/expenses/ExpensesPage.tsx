@@ -46,15 +46,44 @@ export default function ExpensesPage({
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Generating occurrences is a write, and a server component must not mutate
-  // while rendering — so it happens here, once per mount, and only refreshes
-  // when something was actually created.
-  const synced = useRef(false);
+  // while rendering — so it happens here, and only refreshes when something
+  // was actually created.
+  //
+  // Once per *day* rather than once per mount. This page is kept open: on a
+  // phone it is a tab that survives for weeks, on a desktop it sits in a
+  // window overnight. Syncing only at mount meant a rule due on the 17th
+  // stayed invisible until the user happened to reload.
+  const syncedFor = useRef<string | null>(null);
   useEffect(() => {
-    if (synced.current) return;
-    synced.current = true;
-    syncRecurring().then(({ created }) => {
-      if (created > 0) router.refresh();
-    });
+    // The date, not a flag: waking up on a day already synced must do nothing,
+    // and waking up three days later must catch all three up. dueOccurrences
+    // handles the gap, so this only has to notice that there is one.
+    function sync() {
+      const today = todayDate();
+      const previous = syncedFor.current;
+      if (previous === today) return;
+      syncedFor.current = today;
+
+      syncRecurring().then(({ created }) => {
+        // On a day that actually rolled over, refresh even if nothing was
+        // generated: the month heading, the "previstos" list and the disabled
+        // → arrow are all derived from today and went stale at midnight too.
+        if (created > 0 || previous !== null) router.refresh();
+      });
+    }
+
+    // Becoming visible is the only trigger: a phone asleep in a pocket throttles
+    // background timers or never runs them at all, so a page nobody is looking
+    // at is a page that does not need to be up to date yet. It catches up as it
+    // is looked at.
+    function onVisible() {
+      if (document.visibilityState === "visible") sync();
+    }
+
+    sync();
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [router]);
 
   const monthExpenses = useMemo(
